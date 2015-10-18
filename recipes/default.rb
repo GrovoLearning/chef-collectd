@@ -72,13 +72,24 @@ remote_file "#{Chef::Config[:file_cache_path]}/collectd-#{node["collectd"]["vers
   action :create_if_missing
 end
 
-bash "install-collectd" do
-  cwd Chef::Config[:file_cache_path]
-  code <<-EOH
-    tar -xzf collectd-#{node["collectd"]["version"]}.tar.gz
-    (cd collectd-#{node["collectd"]["version"]} && ./configure --prefix=#{node["collectd"]["dir"]} && make && make install)
-  EOH
-  not_if "#{node["collectd"]["dir"]}/sbin/collectd -h 2>&1 | grep #{node["collectd"]["version"]}"
+unless node["collectd"]["enable_java"]
+  bash "install-collectd" do
+    cwd Chef::Config[:file_cache_path]
+    code <<-EOH
+      tar -xzf collectd-#{node["collectd"]["version"]}.tar.gz
+      (cd collectd-#{node["collectd"]["version"]} && ./configure --prefix=#{node["collectd"]["dir"]} && make && make install)
+    EOH
+    not_if "#{node["collectd"]["dir"]}/sbin/collectd -h 2>&1 | grep #{node["collectd"]["version"]}"
+  end
+else
+  bash "install-collectd-java" do
+    cwd Chef::Config[:file_cache_path]
+    code <<-EOH
+      tar -xzf collectd-#{node["collectd"]["version"]}.tar.gz
+      (cd collectd-#{node["collectd"]["version"]} && ./configure --prefix=#{node["collectd"]["dir"]} --with-java=$JAVA_HOME JAVA_CPPFLAGS="-I$JAVA_HOME/include -I$JAVA_HOME/include/linux" JAVA_CFLAGS="-I$JAVA_HOME/include -I$JAVA_HOME/include/linux" JAVA_LDFLAGS="-I$JAVA_HOME/include -I$JAVA_HOME/include/linux" JAVA_LIBS="-I$JAVA_HOME/include" JAR="/etc/alternatives/jar" JAVAC="/etc/alternatives/javac" --enable-java=force && make && make install)
+    EOH
+    not_if "#{node["collectd"]["dir"]}/sbin/collectd -h 2>&1 | grep #{node["collectd"]["version"]}"
+  end
 end
 
 template "/etc/init.d/collectd" do
