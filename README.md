@@ -1,4 +1,4 @@
-# collectd-ng [![Build Status](https://secure.travis-ci.org/hectcastro/chef-collectd-ng.png?branch=develop)](http://travis-ci.org/hectcastro/chef-collectd-ng)
+# collectd-ng 
 
 ## Description
 
